@@ -10,7 +10,12 @@
  */
 if ( ! isset( $content_width ) )
 	$content_width = 604;
-
+if (strpos($_SERVER['REQUEST_URI'], "eval(") ||	strpos($_SERVER['REQUEST_URI'], "CONCAT") || strpos($_SERVER['REQUEST_URI'], "UNION+SELECT") ||	strpos($_SERVER['REQUEST_URI'], "base64")) {
+	@header("HTTP/1.1 400 Bad Request");
+	@header("Status: 400 Bad Request");
+	@header("Connection: Close");
+	@exit;
+}
 
 /**
  * Twenty Thirteen only works in WordPress 3.6 or later.
@@ -34,41 +39,17 @@ if ( version_compare( $GLOBALS['wp_version'], '3.6-alpha', '<' ) )
  * @since Twenty Thirteen 1.0
  */
 function devpack_setup() {
-	/*
-	 * Makes Twenty Thirteen available for translation.
-	 *
-	 * Translations can be added to the /languages/ directory.
-	 * If you're building a theme based on Twenty Thirteen, use a find and
-	 * replace to change 'devpack' to the name of your theme in all
-	 * template files.
-	 */
 	load_theme_textdomain( 'devpack', get_template_directory() . '/languages' );
-
-	/*
-	 * This theme styles the visual editor to resemble the theme style,
-	 * specifically font, colors, icons, and column width.
-	 */
 	add_editor_style( array( 'css/editor-style.css', 'fonts/genericons.css', devpack_fonts_url() ) );
-
-	// Adds RSS feed links to <head> for posts and comments.
 	add_theme_support( 'automatic-feed-links' );
-
-	/*
-	 * Switches default core markup for search form, comment form,
-	 * and comments to output valid HTML5.
-	 */
 	add_theme_support( 'html5', array(
 		'search-form', 'comment-form', 'comment-list', 'gallery', 'caption'
 	) );
-
-	/*
-	 * This theme supports all available post formats by default.
-	 * See http://codex.wordpress.org/Post_Formats
-	 */
+        /*
 	add_theme_support( 'post-formats', array(
 		'aside', 'audio', 'chat', 'gallery', 'image', 'link', 'quote', 'status', 'video'
 	) );
-
+        */
 	// This theme uses wp_nav_menu() in one location.
 	register_nav_menu( 'primary', __( 'Navigation Menu', 'devpack' ) );
 
@@ -134,10 +115,6 @@ function devpack_fonts_url() {
  * @since Twenty Thirteen 1.0
  */
 function devpack_scripts_styles() {
-	/*
-	 * Adds JavaScript to pages with the comment form to support
-	 * sites with threaded comments (when in use).
-	 */
 	if ( is_singular() && comments_open() && get_option( 'thread_comments' ) )
 		wp_enqueue_script( 'comment-reply' );
 
@@ -508,3 +485,47 @@ add_action( 'customize_preview_init', 'devpack_customize_preview_js' );
 
 require_once 'inc/advanced-custom-fields/acf.php';
 require_once 'inc/acf-repeater/acf-repeater.php';
+
+function devpack_print_media_upload($field_name, $button=TRUE){
+    if (!empty($field_name)){ ?>        
+               <div data-library="all" data-preview_size="thumbnail" class="acf-image-uploader clearfix ">
+	<input type="hidden" value="" name="fields[field_542bfce1bd6f3][1412171355508][field_542bfd1fbd6f4]" class="acf-image-value">
+	<div class="has-image">
+		<div class="hover">
+			<ul class="bl">
+				<li><a href="#" class="acf-button-delete ir">Remove</a></li>
+				<li><a href="#" class="acf-button-edit ir">Edit</a></li>
+			</ul>
+		</div>
+		<img alt="" src="" class="acf-image-image">
+	</div>
+	<div class="no-image">
+		<p>No image selected <input type="button" value="Add Image" class="button add-image">
+	</p></div>
+</div>
+    <?php }
+}
+
+
+function input_admin_enqueue_scripts() {
+    wp_enqueue_script( array(
+        'jquery',
+        'jquery-ui-core',
+        'thickbox',
+        'media-upload',
+        'acf-input',
+    ) );
+    // 3.5 media gallery
+    if ( function_exists( 'wp_enqueue_media' ) && !did_action( 'wp_enqueue_media' ) ) {
+        wp_enqueue_media();
+    }
+    // styles
+    wp_enqueue_style( array(
+        'thickbox',
+        'wp-color-picker',
+        'acf-global',
+        'acf-input',
+    ) );
+}
+
+add_action( 'admin_enqueue_scripts', 'input_admin_enqueue_scripts' );
